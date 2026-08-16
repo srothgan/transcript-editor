@@ -49,13 +49,6 @@ pnpm build
 
 No test framework is included. The repository intentionally uses linting, strict TypeScript, a production build, and a browser smoke check as its lean validation baseline.
 
-## Docker
-
-```bash
-docker build -t transcript-editor .
-docker run --rm -p 3000:3000 transcript-editor
-```
-
 ## Privacy
 
 Audio and transcript files stay in the browser. The application has no upload endpoint, database, analytics, or feedback collection.
