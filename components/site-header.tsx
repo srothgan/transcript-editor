@@ -4,9 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Moon, Sun } from "lucide-react";
-import { useTheme } from "next-themes";
 
 import { Button } from "@/components/ui/button";
+import { useTheme } from "@/components/theme-provider";
 import {
   Tooltip,
   TooltipContent,
@@ -79,7 +79,8 @@ export function SiteHeader() {
               />
             }
           >
-            {resolvedTheme === "dark" ? <Sun /> : <Moon />}
+            <Moon className="dark:hidden" />
+            <Sun className="hidden dark:block" />
             <span className="sr-only">Toggle color theme</span>
           </TooltipTrigger>
           <TooltipContent>Toggle color theme</TooltipContent>

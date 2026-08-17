@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { Kbd } from "@/components/ui/kbd";
+import { ModifierKey, ShortcutKeys } from "@/components/shortcut-keys";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -14,27 +14,28 @@ const SHORTCUT_GROUPS = [
   {
     title: "Files",
     shortcuts: [
-      ["Open transcript", ["Ctrl / ⌘", "O"]],
-      ["Open audio", ["Ctrl / ⌘", "Shift", "O"]],
-      ["Save transcript locally", ["Ctrl / ⌘", "S"]],
-      ["Export text file", ["Ctrl / ⌘", "Shift", "S"]],
+      ["Open transcript", ["Mod", "O"]],
+      ["Open audio", ["Mod", "Shift", "O"]],
+      ["Save transcript locally", ["Mod", "S"]],
+      ["Export text file", ["Mod", "Shift", "S"]],
     ],
   },
   {
     title: "Playback",
     shortcuts: [
-      ["Play or pause", ["Ctrl / ⌘", "Enter"]],
-      ["Back five seconds", ["Ctrl / ⌘", "Shift", "←"]],
-      ["Forward five seconds", ["Ctrl / ⌘", "Shift", "→"]],
-      ["Insert timestamp", ["Ctrl / ⌘", "J"]],
+      ["Play or pause", ["Mod", "Enter"]],
+      ["Back five seconds", ["Mod", "Shift", "←"]],
+      ["Forward five seconds", ["Mod", "Shift", "→"]],
+      ["Insert timestamp", ["Mod", "J"]],
     ],
   },
   {
     title: "Editor",
     shortcuts: [
-      ["Find and replace", ["Ctrl / ⌘", "F"]],
-      ["Undo", ["Ctrl / ⌘", "Z"]],
-      ["Open documentation", ["Ctrl / ⌘", "/"]],
+      ["Find and replace", ["Mod", "F"]],
+      ["Undo", ["Mod", "Z"]],
+      ["Redo", ["Mod", "Y"], ["Mod", "Shift", "Z"]],
+      ["Open documentation", ["Mod", "/"]],
     ],
   },
 ] as const;
@@ -66,13 +67,11 @@ export default function DocsPage() {
               <div key={group.title}>
                 <h3 className="text-sm font-medium">{group.title}</h3>
                 <dl className="mt-3 grid gap-3">
-                  {group.shortcuts.map(([label, keys]) => (
+                  {group.shortcuts.map(([label, keys, macKeys]) => (
                     <div key={label} className="grid gap-1.5">
                       <dt className="text-xs text-muted-foreground">{label}</dt>
                       <dd className="flex flex-wrap items-center gap-1">
-                        {keys.map((key) => (
-                          <Kbd key={key}>{key}</Kbd>
-                        ))}
+                        <ShortcutKeys keys={keys} macKeys={macKeys} />
                       </dd>
                     </div>
                   ))}
@@ -80,6 +79,19 @@ export default function DocsPage() {
               </div>
             ))}
           </div>
+        </section>
+
+        <section aria-labelledby="editing-workflow">
+          <h2 id="editing-workflow" className="text-lg font-semibold">
+            Editing workflow
+          </h2>
+          <ul className="mt-4 grid list-disc gap-2 pl-5 text-sm leading-6 text-muted-foreground">
+            <li>Hover a timestamp or place the cursor inside it to reveal a jump action. <ModifierKey />-clicking the timestamp jumps immediately.</li>
+            <li>Find and replace opens from the transcript toolbar or its keyboard shortcut. Undo and redo work on individual editor changes.</li>
+            <li>Saving keeps the previous 20 local versions under Saved history.</li>
+            <li>Speaker text is inserted exactly as configured, with an optional shortcut set from the Speakers control in the transcript toolbar.</li>
+            <li>Playback resumes two seconds before the paused position. The transport controls provide separate 1- and 5-second jumps in both directions.</li>
+          </ul>
         </section>
 
         <section aria-labelledby="privacy">

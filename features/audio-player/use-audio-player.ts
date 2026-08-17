@@ -1,15 +1,16 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { useTheme } from "next-themes";
 import { toast } from "sonner";
 import WaveSurfer from "wavesurfer.js";
 import Hover from "wavesurfer.js/dist/plugins/hover.esm.js";
 import Timeline from "wavesurfer.js/dist/plugins/timeline.esm.js";
 
+import { useTheme } from "@/components/theme-provider";
 import { clamp, formatTimestamp, parseTimestamp } from "@/lib/time-utils";
 
 const AUDIO_EXTENSION = /\.(aac|aiff|amr|flac|m4a|mp3|mp4|ogg|opus|wav|webm)$/i;
+const RESUME_REWIND_SECONDS = 2;
 const MEDIA_SESSION_ACTIONS = [
   "play",
   "pause",
@@ -56,6 +57,7 @@ export function useAudioPlayer() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMutedRef = useRef(false);
   const playbackRateRef = useRef(1);
+  const resumeRewindPendingRef = useRef(false);
   const volumeRef = useRef(1);
   const waveformRef = useRef<HTMLDivElement>(null);
   const waveSurferRef = useRef<WaveSurfer | null>(null);
@@ -79,14 +81,43 @@ export function useAudioPlayer() {
     }
 
     const nextTime = clamp(seconds, 0, durationRef.current || 0);
+    resumeRewindPendingRef.current = false;
     audio.currentTime = nextTime;
     currentTimeRef.current = nextTime;
     setCurrentTime(nextTime);
   }, []);
 
+  const resumeAudio = useCallback((audio: HTMLAudioElement) => {
+    if (resumeRewindPendingRef.current) {
+      const nextTime = clamp(
+        audio.currentTime - RESUME_REWIND_SECONDS,
+        0,
+        audio.duration || 0,
+      );
+      audio.currentTime = nextTime;
+      currentTimeRef.current = nextTime;
+      setCurrentTime(nextTime);
+    }
+
+    resumeRewindPendingRef.current = false;
+    return audio.play();
+  }, []);
+
   const seekBy = useCallback(
     (seconds: number) => {
       seekTo(currentTimeRef.current + seconds);
+    },
+    [seekTo],
+  );
+
+  const jumpToTimestamp = useCallback(
+    (seconds: number) => {
+      if (!audioRef.current) {
+        toast.info("Open an audio file first.");
+        return;
+      }
+
+      seekTo(seconds);
     },
     [seekTo],
   );
@@ -100,13 +131,13 @@ export function useAudioPlayer() {
     }
 
     if (audio.paused) {
-      void audio.play().catch(() => {
+      void resumeAudio(audio).catch(() => {
         toast.error("The browser could not start audio playback.");
       });
     } else {
       audio.pause();
     }
-  }, []);
+  }, [resumeAudio]);
 
   useEffect(() => {
     if (!file || !waveformRef.current) {
@@ -152,8 +183,21 @@ export function useAudioPlayer() {
       currentTimeRef.current = audio.currentTime;
       setCurrentTime(audio.currentTime);
     };
-    const handlePlay = () => setIsPlaying(true);
-    const handlePause = () => setIsPlaying(false);
+    const handlePlay = () => {
+      resumeRewindPendingRef.current = false;
+      setIsPlaying(true);
+    };
+    const handlePause = () => {
+      resumeRewindPendingRef.current = audio.currentTime > 0 && !audio.ended;
+      setIsPlaying(false);
+    };
+    const handleEnded = () => {
+      resumeRewindPendingRef.current = false;
+      setIsPlaying(false);
+    };
+    const handleSeeking = () => {
+      resumeRewindPendingRef.current = false;
+    };
     const handleWaiting = () => setIsLoading(true);
     const handleCanPlay = () => setIsLoading(false);
     const handleError = () => {
@@ -166,7 +210,8 @@ export function useAudioPlayer() {
     audio.addEventListener("timeupdate", handleTimeUpdate);
     audio.addEventListener("play", handlePlay);
     audio.addEventListener("pause", handlePause);
-    audio.addEventListener("ended", handlePause);
+    audio.addEventListener("ended", handleEnded);
+    audio.addEventListener("seeking", handleSeeking);
     audio.addEventListener("waiting", handleWaiting);
     audio.addEventListener("canplay", handleCanPlay);
     audio.addEventListener("error", handleError);
@@ -182,7 +227,7 @@ export function useAudioPlayer() {
       }
 
       const handlers: Partial<Record<MediaSessionAction, MediaSessionActionHandler>> = {
-        play: () => void audio.play(),
+        play: () => void resumeAudio(audio),
         pause: () => audio.pause(),
         seekbackward: (details) => {
           audio.currentTime = clamp(
@@ -223,7 +268,8 @@ export function useAudioPlayer() {
       audio.removeEventListener("timeupdate", handleTimeUpdate);
       audio.removeEventListener("play", handlePlay);
       audio.removeEventListener("pause", handlePause);
-      audio.removeEventListener("ended", handlePause);
+      audio.removeEventListener("ended", handleEnded);
+      audio.removeEventListener("seeking", handleSeeking);
       audio.removeEventListener("waiting", handleWaiting);
       audio.removeEventListener("canplay", handleCanPlay);
       audio.removeEventListener("error", handleError);
@@ -233,7 +279,7 @@ export function useAudioPlayer() {
       URL.revokeObjectURL(objectUrl);
       clearMediaSession();
     };
-  }, [file]);
+  }, [file, resumeAudio]);
 
   useEffect(() => {
     const waveSurfer = waveSurferRef.current;
@@ -266,6 +312,7 @@ export function useAudioPlayer() {
     setDuration(0);
     durationRef.current = 0;
     setIsPlaying(false);
+    resumeRewindPendingRef.current = false;
     setError(null);
   };
 
@@ -276,6 +323,7 @@ export function useAudioPlayer() {
     setDuration(0);
     durationRef.current = 0;
     setIsPlaying(false);
+    resumeRewindPendingRef.current = false;
     setError(null);
     setTimeInput("00:00:00");
 
@@ -369,6 +417,7 @@ export function useAudioPlayer() {
     isLoading,
     isMuted,
     isPlaying,
+    jumpToTimestamp,
     jumpToTime,
     openAudioFile,
     playbackRate,

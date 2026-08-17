@@ -4,11 +4,11 @@ A local-first transcription workspace with a waveform audio player on the left a
 
 ## Features
 
-- Local audio playback with a waveform, timeline, drag seeking, speed control, volume control, direct time entry, timestamp copying, drag-and-drop, and Media Session support.
-- CodeMirror 6 transcript editing with search, history, line wrapping, spellcheck, and timestamp insertion.
+- Local audio playback with a waveform, timeline, 1- and 5-second seeking, two-second resume rewind, speed control, volume control, direct time entry, timestamp copying, drag-and-drop, and Media Session support.
+- CodeMirror 6 transcript editing with search, undo and redo, line wrapping, spellcheck, timestamp insertion, and contextual timestamp-to-audio jumping.
 - TanStack Hotkeys shortcuts that keep the player usable while editing.
 - Responsive shadcn/Base UI interface with light and dark themes.
-- Browser-local transcript saving plus plain-text import and export without uploading files.
+- Browser-local transcript saving with 20 previous revisions, configurable speaker shortcuts, and plain-text import and export without uploading files.
 
 ## Stack
 

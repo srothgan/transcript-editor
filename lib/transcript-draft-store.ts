@@ -4,12 +4,18 @@ import "client-only";
 const DATABASE_NAME = "transcript-editor";
 const DATABASE_VERSION = 1;
 const DRAFT_KEY = "current";
+const HISTORY_KEY = "history";
+const HISTORY_LIMIT = 20;
 const STORE_NAME = "drafts";
 
 export type TranscriptDraft = {
   content: string;
   fileName: string;
   savedAt: string;
+};
+
+export type TranscriptRevision = TranscriptDraft & {
+  id: string;
 };
 
 function requestResult<T>(request: IDBRequest<T>) {
@@ -52,13 +58,60 @@ export async function getTranscriptDraft() {
   }
 }
 
+export async function getTranscriptHistory() {
+  const database = await openDraftDatabase();
+
+  try {
+    const transaction = database.transaction(STORE_NAME, "readonly");
+    const history = await requestResult(
+      transaction.objectStore(STORE_NAME).get(HISTORY_KEY) as IDBRequest<
+        TranscriptRevision[] | undefined
+      >,
+    );
+
+    return history ?? [];
+  } finally {
+    database.close();
+  }
+}
+
 export async function saveTranscriptDraft(draft: TranscriptDraft) {
   const database = await openDraftDatabase();
 
   try {
     const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).put(draft, DRAFT_KEY);
+    const store = transaction.objectStore(STORE_NAME);
+    const [currentDraft, storedHistory] = await Promise.all([
+      requestResult(store.get(DRAFT_KEY) as IDBRequest<TranscriptDraft | undefined>),
+      requestResult(store.get(HISTORY_KEY) as IDBRequest<TranscriptRevision[] | undefined>),
+    ]);
+    let history = (storedHistory ?? []).filter(
+      (revision) => revision.content !== draft.content || revision.fileName !== draft.fileName,
+    );
+
+    if (
+      currentDraft &&
+      (currentDraft.content !== draft.content || currentDraft.fileName !== draft.fileName)
+    ) {
+      const revision: TranscriptRevision = {
+        ...currentDraft,
+        id: `${currentDraft.savedAt}-${crypto.randomUUID()}`,
+      };
+      history = [
+        revision,
+        ...history.filter(
+          (storedRevision) =>
+            storedRevision.content !== revision.content ||
+            storedRevision.fileName !== revision.fileName,
+        ),
+      ].slice(0, HISTORY_LIMIT);
+    }
+
+    store.put(draft, DRAFT_KEY);
+    store.put(history, HISTORY_KEY);
     await transactionComplete(transaction);
+
+    return history;
   } finally {
     database.close();
   }
