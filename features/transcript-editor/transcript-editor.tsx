@@ -6,32 +6,66 @@ import {
   useImperativeHandle,
   useRef,
 } from "react";
+import {
+  redo as redoCommand,
+  redoDepth,
+  undo as undoCommand,
+  undoDepth,
+} from "@codemirror/commands";
+import { openSearchPanel, search } from "@codemirror/search";
 import { basicSetup } from "codemirror";
 import { EditorView, placeholder } from "@codemirror/view";
 
+import { timestampJumpExtension } from "./timestamp-jump-extension";
+import { createTranscriptSearchPanel } from "./search-panel";
+
+export type EditorHistoryState = {
+  canRedo: boolean;
+  canUndo: boolean;
+};
+
 export type TranscriptEditorHandle = {
   focus: () => void;
+  insertSpeaker: (name: string) => void;
   insertText: (text: string) => void;
+  openSearch: () => void;
+  redo: () => void;
+  undo: () => void;
 };
 
 type TranscriptEditorProps = {
   value: string;
+  onHistoryStateChange: (state: EditorHistoryState) => void;
   onChange: (value: string) => void;
+  onJumpToTime: (seconds: number) => void;
 };
 
 export const TranscriptEditor = forwardRef<
   TranscriptEditorHandle,
   TranscriptEditorProps
->(function TranscriptEditor({ value, onChange }, forwardedRef) {
+>(function TranscriptEditor(
+  { value, onChange, onHistoryStateChange, onJumpToTime },
+  forwardedRef,
+) {
   const containerRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<EditorView | null>(null);
   const onChangeRef = useRef(onChange);
+  const onHistoryStateChangeRef = useRef(onHistoryStateChange);
+  const onJumpToTimeRef = useRef(onJumpToTime);
   const initialValueRef = useRef(value);
   const externalUpdateRef = useRef(false);
 
   useEffect(() => {
     onChangeRef.current = onChange;
   }, [onChange]);
+
+  useEffect(() => {
+    onHistoryStateChangeRef.current = onHistoryStateChange;
+  }, [onHistoryStateChange]);
+
+  useEffect(() => {
+    onJumpToTimeRef.current = onJumpToTime;
+  }, [onJumpToTime]);
 
   useEffect(() => {
     if (!containerRef.current) {
@@ -49,9 +83,18 @@ export const TranscriptEditor = forwardRef<
           spellcheck: "true",
         }),
         placeholder("Start typing or open a .txt transcript…"),
+        search({ createPanel: createTranscriptSearchPanel, top: true }),
+        timestampJumpExtension((seconds) => onJumpToTimeRef.current(seconds)),
         EditorView.updateListener.of((update) => {
           if (update.docChanged && !externalUpdateRef.current) {
             onChangeRef.current(update.state.doc.toString());
+          }
+
+          if (update.docChanged || update.transactions.some((transaction) => transaction.selection)) {
+            onHistoryStateChangeRef.current({
+              canRedo: redoDepth(update.state) > 0,
+              canUndo: undoDepth(update.state) > 0,
+            });
           }
         }),
         EditorView.theme({
@@ -64,6 +107,7 @@ export const TranscriptEditor = forwardRef<
     });
 
     editorRef.current = editor;
+    onHistoryStateChangeRef.current({ canRedo: false, canUndo: false });
 
     return () => {
       editor.destroy();
@@ -92,6 +136,26 @@ export const TranscriptEditor = forwardRef<
       focus() {
         editorRef.current?.focus();
       },
+      insertSpeaker(name: string) {
+        const editor = editorRef.current;
+
+        if (!editor) {
+          return;
+        }
+
+        const selection = editor.state.selection.main;
+        const line = editor.state.doc.lineAt(selection.from);
+        const lineIsEmpty = line.text.trim().length === 0;
+        const text = `${lineIsEmpty ? "" : "\n"}${name}`;
+        const from = lineIsEmpty ? line.from : selection.from;
+        const to = lineIsEmpty ? line.to : selection.to;
+        editor.dispatch({
+          changes: { from, to, insert: text },
+          selection: { anchor: from + text.length },
+          scrollIntoView: true,
+        });
+        editor.focus();
+      },
       insertText(text: string) {
         const editor = editorRef.current;
 
@@ -106,6 +170,26 @@ export const TranscriptEditor = forwardRef<
           scrollIntoView: true,
         });
         editor.focus();
+      },
+      openSearch() {
+        const editor = editorRef.current;
+        if (editor) {
+          openSearchPanel(editor);
+        }
+      },
+      redo() {
+        const editor = editorRef.current;
+        if (editor) {
+          redoCommand(editor);
+          editor.focus();
+        }
+      },
+      undo() {
+        const editor = editorRef.current;
+        if (editor) {
+          undoCommand(editor);
+          editor.focus();
+        }
       },
     }),
     [],

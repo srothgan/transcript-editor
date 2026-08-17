@@ -56,8 +56,8 @@ export default function AboutPage() {
               <h3 className="font-medium text-foreground">Audio player</h3>
               <ul className="mt-3 grid list-disc gap-1.5 pl-5">
                 <li>Displays a navigable waveform and timeline.</li>
-                <li>Supports play, pause, seeking, speed, and volume controls.</li>
-                <li>Copies or inserts the current playback timestamp.</li>
+                <li>Supports play, pause, precise seeking, resume rewind, speed, and volume controls.</li>
+                <li>Copies, inserts, and jumps to transcript timestamps.</li>
                 <li>Keeps audio files on the local device.</li>
               </ul>
             </div>
@@ -67,7 +67,8 @@ export default function AboutPage() {
                 <li>Creates, opens, renames, saves, and exports text files.</li>
                 <li>Provides line numbers, search and replace, undo, and redo.</li>
                 <li>Keeps the editor usable alongside playback shortcuts.</li>
-                <li>Stores saved drafts locally in the browser.</li>
+                <li>Stores the current transcript and 20 saved revisions locally.</li>
+                <li>Inserts locally configured speaker labels and shortcuts.</li>
               </ul>
             </div>
           </div>

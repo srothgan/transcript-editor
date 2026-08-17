@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useHotkeys } from "@tanstack/react-hotkeys";
 import {
@@ -8,9 +8,12 @@ import {
   FilePlus2,
   FileText,
   FolderOpen,
+  Redo2,
   RotateCcw,
   Save,
+  Search,
   Timer,
+  Undo2,
   X,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -28,6 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
   TooltipContent,
@@ -39,17 +43,28 @@ import {
 } from "@/features/audio-player/audio-player";
 import {
   TranscriptEditor,
+  type EditorHistoryState,
   type TranscriptEditorHandle,
 } from "@/features/transcript-editor/transcript-editor";
+import { TranscriptHistoryDialog } from "@/features/transcript-editor/transcript-history-dialog";
+import { SpeakerMenu } from "@/features/speakers/speaker-menu";
+import {
+  loadSpeakerSettings,
+  saveSpeakerSettings,
+  type SpeakerDefinition,
+} from "@/features/speakers/speaker-settings-store";
 import {
   downloadTextFile,
   isTextFile,
   normalizeTextFileName,
 } from "@/lib/file-utils";
 import { formatTimestamp } from "@/lib/time-utils";
+import { useModifierKeyLabel } from "@/lib/platform";
 import {
   getTranscriptDraft,
+  getTranscriptHistory,
   saveTranscriptDraft,
+  type TranscriptRevision,
 } from "@/lib/transcript-draft-store";
 
 const INITIAL_FILE_NAME = "untitled.txt";
@@ -60,26 +75,35 @@ type PendingAction =
   | { type: "open"; file: File };
 
 export function TranscriptWorkspace() {
+  const modifierKey = useModifierKeyLabel();
   const router = useRouter();
   const audioPlayerRef = useRef<AudioPlayerHandle>(null);
   const editorRef = useRef<TranscriptEditorHandle>(null);
   const transcriptFileInputRef = useRef<HTMLInputElement>(null);
   const [content, setContent] = useState("");
   const [draftAvailable, setDraftAvailable] = useState(false);
+  const [editorHistoryState, setEditorHistoryState] = useState<EditorHistoryState>({
+    canRedo: false,
+    canUndo: false,
+  });
+  const [editorSessionId, setEditorSessionId] = useState(0);
   const [fileName, setFileName] = useState<string | null>(null);
   const [pendingAction, setPendingAction] = useState<PendingAction | null>(null);
+  const [revisions, setRevisions] = useState<TranscriptRevision[]>([]);
   const [savedContent, setSavedContent] = useState("");
   const [savedFileName, setSavedFileName] = useState<string | null>(null);
+  const [speakers, setSpeakers] = useState<SpeakerDefinition[]>([]);
   const hasTranscript = fileName !== null;
   const isDirty = hasTranscript && (content !== savedContent || fileName !== savedFileName);
 
   useEffect(() => {
     let cancelled = false;
 
-    void getTranscriptDraft()
-      .then((draft) => {
+    void Promise.all([getTranscriptDraft(), getTranscriptHistory()])
+      .then(([draft, storedRevisions]) => {
         if (!cancelled) {
           setDraftAvailable(Boolean(draft));
+          setRevisions(storedRevisions);
         }
       })
       .catch(() => {
@@ -91,6 +115,11 @@ export function TranscriptWorkspace() {
     };
   }, []);
 
+  useEffect(() => {
+    const frame = requestAnimationFrame(() => setSpeakers(loadSpeakerSettings()));
+    return () => cancelAnimationFrame(frame);
+  }, []);
+
   const focusEditor = () => requestAnimationFrame(() => editorRef.current?.focus());
   const openTranscriptPicker = () => transcriptFileInputRef.current?.click();
 
@@ -99,6 +128,8 @@ export function TranscriptWorkspace() {
     setSavedContent("");
     setFileName(INITIAL_FILE_NAME);
     setSavedFileName(INITIAL_FILE_NAME);
+    setEditorHistoryState({ canRedo: false, canUndo: false });
+    setEditorSessionId((current) => current + 1);
     focusEditor();
   };
 
@@ -107,6 +138,7 @@ export function TranscriptWorkspace() {
     setSavedContent("");
     setFileName(null);
     setSavedFileName(null);
+    setEditorHistoryState({ canRedo: false, canUndo: false });
   };
 
   const exportTranscript = () => {
@@ -129,7 +161,7 @@ export function TranscriptWorkspace() {
     const normalizedName = normalizeTextFileName(fileName);
 
     try {
-      await saveTranscriptDraft({
+      const nextRevisions = await saveTranscriptDraft({
         content,
         fileName: normalizedName,
         savedAt: new Date().toISOString(),
@@ -138,6 +170,7 @@ export function TranscriptWorkspace() {
       setSavedFileName(normalizedName);
       setSavedContent(content);
       setDraftAvailable(true);
+      setRevisions(nextRevisions);
     } catch {
       toast.error("The transcript could not be saved in this browser.");
     }
@@ -157,6 +190,8 @@ export function TranscriptWorkspace() {
       setSavedContent(draft.content);
       setFileName(draft.fileName);
       setSavedFileName(draft.fileName);
+      setEditorHistoryState({ canRedo: false, canUndo: false });
+      setEditorSessionId((current) => current + 1);
       focusEditor();
     } catch {
       toast.error("The saved transcript could not be opened.");
@@ -171,6 +206,29 @@ export function TranscriptWorkspace() {
 
     const timestamp = formatTimestamp(audioPlayerRef.current?.getCurrentTime() ?? 0);
     editorRef.current?.insertText(`[${timestamp}] `);
+  };
+
+  const jumpToTimestamp = useCallback((seconds: number) => {
+    audioPlayerRef.current?.seekTo(seconds);
+  }, []);
+
+  const insertSpeaker = useCallback((speaker: SpeakerDefinition) => {
+    editorRef.current?.insertSpeaker(speaker.name);
+  }, []);
+
+  const updateSpeakers = useCallback((nextSpeakers: SpeakerDefinition[]) => {
+    try {
+      saveSpeakerSettings(nextSpeakers);
+      setSpeakers(nextSpeakers);
+    } catch {
+      toast.error("Speaker settings could not be saved in this browser.");
+    }
+  }, []);
+
+  const restoreRevision = (revision: TranscriptRevision) => {
+    setContent(revision.content);
+    setFileName(revision.fileName);
+    focusEditor();
   };
 
   const requestNewTranscript = () => {
@@ -198,6 +256,8 @@ export function TranscriptWorkspace() {
       setSavedContent(nextContent);
       setFileName(file.name);
       setSavedFileName(file.name);
+      setEditorHistoryState({ canRedo: false, canUndo: false });
+      setEditorSessionId((current) => current + 1);
       toast.success(`Opened ${file.name}.`);
       focusEditor();
     } catch {
@@ -259,6 +319,11 @@ export function TranscriptWorkspace() {
         callback: () => audioPlayerRef.current?.seekBy(5),
       },
       { hotkey: "Mod+/", callback: () => router.push("/docs") },
+      ...speakers.flatMap((speaker) =>
+        speaker.shortcut
+          ? [{ hotkey: speaker.shortcut, callback: () => insertSpeaker(speaker) }]
+          : [],
+      ),
     ],
     {
       ignoreInputs: false,
@@ -328,6 +393,66 @@ export function TranscriptWorkspace() {
                 </TooltipTrigger>
                 <TooltipContent>Open transcript</TooltipContent>
               </Tooltip>
+              <Separator orientation="vertical" className="mx-0.5 h-5 self-center" />
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={!hasTranscript}
+                      onClick={() => editorRef.current?.openSearch()}
+                    />
+                  }
+                >
+                  <Search />
+                  <span className="sr-only">Find and replace</span>
+                </TooltipTrigger>
+                <TooltipContent>Find and replace ({modifierKey} F)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={!hasTranscript || !editorHistoryState.canUndo}
+                      onClick={() => editorRef.current?.undo()}
+                    />
+                  }
+                >
+                  <Undo2 />
+                  <span className="sr-only">Undo edit</span>
+                </TooltipTrigger>
+                <TooltipContent>Undo edit ({modifierKey} Z)</TooltipContent>
+              </Tooltip>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      variant="ghost"
+                      size="icon-sm"
+                      disabled={!hasTranscript || !editorHistoryState.canRedo}
+                      onClick={() => editorRef.current?.redo()}
+                    />
+                  }
+                >
+                  <Redo2 />
+                  <span className="sr-only">Redo edit</span>
+                </TooltipTrigger>
+                <TooltipContent>Redo edit ({modifierKey === "⌘" ? `${modifierKey} Shift Z` : `${modifierKey} Y`})</TooltipContent>
+              </Tooltip>
+              <TranscriptHistoryDialog
+                disabled={!hasTranscript}
+                revisions={revisions}
+                onRestore={restoreRevision}
+              />
+              <SpeakerMenu
+                disabled={!hasTranscript}
+                speakers={speakers}
+                onChange={updateSpeakers}
+                onInsert={insertSpeaker}
+              />
               <Tooltip>
                 <TooltipTrigger
                   render={
@@ -383,7 +508,14 @@ export function TranscriptWorkspace() {
           {hasTranscript ? (
             <>
               <div className="min-h-0 flex-1 overflow-hidden">
-                <TranscriptEditor ref={editorRef} value={content} onChange={setContent} />
+                <TranscriptEditor
+                  key={editorSessionId}
+                  ref={editorRef}
+                  value={content}
+                  onChange={setContent}
+                  onHistoryStateChange={setEditorHistoryState}
+                  onJumpToTime={jumpToTimestamp}
+                />
               </div>
               <footer className="flex h-7 shrink-0 items-center justify-between border-t bg-[var(--workspace-panel)] px-3 font-mono text-[0.65rem] text-muted-foreground">
                 <span>{content.length.toLocaleString()} characters</span>

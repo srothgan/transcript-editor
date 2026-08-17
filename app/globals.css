@@ -194,6 +194,187 @@
   background: color-mix(in oklab, var(--primary) 22%, transparent) !important;
 }
 
+.editor-shell .cm-tooltip:has(.cm-timestamp-jump-tooltip) {
+  overflow: visible;
+  border: 0;
+  background: transparent;
+}
+
+.cm-timestamp-jump-tooltip {
+  animation: timestamp-jump-in 120ms ease-out;
+}
+
+.cm-timestamp-jump-button {
+  display: inline-flex;
+  height: 1.75rem;
+  align-items: center;
+  gap: 0.55rem;
+  border: 1px solid color-mix(in oklab, var(--primary) 24%, var(--border));
+  border-radius: var(--radius-md);
+  background: var(--popover);
+  padding-inline: 0.6rem;
+  color: var(--popover-foreground);
+  font-family: var(--font-geist-sans), sans-serif;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease;
+}
+
+.editor-shell .cm-panels-top {
+  border-bottom: 0;
+}
+
+.editor-shell .cm-panel.cm-transcript-search {
+  position: relative;
+  display: grid;
+  gap: 0.45rem;
+  border-bottom: 1px solid var(--border);
+  background: var(--workspace-panel);
+  padding: 0.6rem;
+  color: var(--foreground);
+  font-family: var(--font-geist-sans), sans-serif;
+}
+
+.cm-transcript-search-row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 1fr) auto repeat(6, 2rem);
+  gap: 0.35rem;
+  align-items: center;
+  padding-right: 2.35rem;
+}
+
+.cm-transcript-search-replace-row {
+  grid-template-columns: minmax(10rem, 1fr) auto auto;
+  padding-right: 2.35rem;
+}
+
+.cm-transcript-search-input {
+  height: 2rem;
+  min-width: 0;
+  border: 1px solid var(--input);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  padding-inline: 0.65rem;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.78rem;
+  outline: none;
+}
+
+.cm-transcript-search-input::placeholder {
+  color: var(--muted-foreground);
+}
+
+.cm-transcript-search-input:focus {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--ring) 24%, transparent);
+}
+
+.cm-transcript-search-status {
+  min-width: 5.25rem;
+  color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.65rem;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.cm-transcript-search-button {
+  display: inline-grid;
+  min-width: 2rem;
+  height: 2rem;
+  cursor: pointer;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--background);
+  padding-inline: 0.55rem;
+  color: var(--foreground);
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+.cm-transcript-search-button:hover:not(:disabled) {
+  border-color: color-mix(in oklab, var(--primary) 32%, var(--border));
+  background: var(--accent);
+}
+
+.cm-transcript-search-button[aria-pressed="true"] {
+  border-color: color-mix(in oklab, var(--primary) 45%, var(--border));
+  background: color-mix(in oklab, var(--primary) 12%, var(--background));
+  color: var(--primary);
+}
+
+.cm-transcript-search-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 1px;
+}
+
+.cm-transcript-search-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.cm-transcript-search-close {
+  position: absolute;
+  top: 0.6rem;
+  right: 0.6rem;
+  border-color: transparent;
+  background: transparent;
+  font-size: 1rem;
+}
+
+@media (max-width: 640px) {
+  .cm-transcript-search-row {
+    grid-template-columns: minmax(8rem, 1fr) repeat(3, 2rem);
+  }
+
+  .cm-transcript-search-status {
+    grid-column: 1;
+    grid-row: 2;
+    min-width: 0;
+    text-align: left;
+  }
+
+  .cm-transcript-search-replace-row {
+    grid-template-columns: minmax(8rem, 1fr) auto auto;
+    padding-right: 0;
+  }
+}
+
+.cm-timestamp-jump-button:hover {
+  border-color: color-mix(in oklab, var(--primary) 35%, var(--border));
+  background: var(--muted);
+}
+
+.cm-timestamp-jump-button:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
+.cm-timestamp-jump-shortcut {
+  color: var(--muted-foreground);
+  font-family: var(--font-geist-mono), monospace;
+  font-size: 0.62rem;
+  font-weight: 400;
+}
+
+@keyframes timestamp-jump-in {
+  from {
+    opacity: 0;
+    transform: translateY(0.2rem) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
 .waveform {
   background: color-mix(in oklab, var(--card) 65%, transparent);
 }
