@@ -3,7 +3,7 @@ import Link from "next/link";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "Why Simon Rothgang built Transcript Editor and how it supports academic transcription work.",
+  description: "Why Simon Rothgang built Transcript Desk and how it supports academic transcription work.",
   alternates: {
     canonical: "/about",
   },
@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <main className="mx-auto w-full max-w-4xl flex-1 px-5 py-10 sm:px-8 sm:py-14">
-      <h1 className="text-3xl font-semibold tracking-tight">About Transcript Editor</h1>
+      <h1 className="text-3xl font-semibold tracking-tight">About Transcript Desk</h1>
 
       <div className="mt-10 grid gap-12 text-sm leading-7 text-muted-foreground">
         <section aria-labelledby="why">
@@ -21,7 +21,7 @@ export default function AboutPage() {
           </h2>
           <div className="mt-4 grid gap-4">
             <p>
-              I originally built Transcript Editor for my work as a student assistant and now use it for my master&apos;s thesis. The goal has stayed the same: make creating, checking, and correcting transcripts less cumbersome.
+              I originally built Transcript Desk for my work as a student assistant and now use it for my master&apos;s thesis. The goal has stayed the same: make creating, checking, and correcting transcripts less cumbersome.
             </p>
             <p>
               I could not find a tool that combined the audio and transcript in the workflow I needed. Switching between a separate text editor and audio player made proofreading AI-generated transcripts unnecessarily complicated, so I built a side-by-side workspace instead.
@@ -43,7 +43,7 @@ export default function AboutPage() {
             >
               aTrain
             </Link>
-            , but I still needed an efficient way to proofread and verify its generated transcripts against the source audio. Transcript Editor grew out of that practical need.
+            , but I still needed an efficient way to proofread and verify its generated transcripts against the source audio. Transcript Desk grew out of that practical need.
           </p>
         </section>
 

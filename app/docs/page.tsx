@@ -4,7 +4,7 @@ import { Kbd } from "@/components/ui/kbd";
 
 export const metadata: Metadata = {
   title: "Docs",
-  description: "Keyboard shortcuts and usage notes for Transcript Editor.",
+  description: "Keyboard shortcuts and usage notes for Transcript Desk.",
   alternates: {
     canonical: "/docs",
   },

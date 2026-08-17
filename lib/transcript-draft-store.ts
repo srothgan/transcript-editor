@@ -1,5 +1,6 @@
 import "client-only";
 
+// Keep the original database name so the rebrand does not hide existing local drafts.
 const DATABASE_NAME = "transcript-editor";
 const DATABASE_VERSION = 1;
 const DRAFT_KEY = "current";

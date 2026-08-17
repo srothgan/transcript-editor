@@ -1,4 +1,4 @@
-# Transcript Editor
+# Transcript Desk
 
 A local-first transcription workspace with a waveform audio player on the left and a professional text editor on the right.
 
@@ -18,6 +18,7 @@ A local-first transcription workspace with a waveform audio player on the left a
 - shadcn/ui with Base UI primitives
 - WaveSurfer.js, CodeMirror 6, and TanStack Hotkeys
 - pnpm
+- Node.js 24
 
 Geist is loaded through `next/font/google`. Next.js downloads it during the build and serves the optimized font files with the application, so the repository does not keep handwritten font assets and browsers do not make requests to Google Fonts.
 

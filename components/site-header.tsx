@@ -35,7 +35,7 @@ export function SiteHeader() {
   return (
     <header className="flex h-[3.25rem] shrink-0 items-center justify-between border-b bg-card px-3 sm:px-4">
       <div className="flex min-w-0 items-center gap-5">
-        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Transcript Editor home">
+        <Link href="/" className="flex shrink-0 items-center gap-2.5" aria-label="Transcript Desk home">
           <Image
             src="/flaticon.png"
             alt=""
@@ -44,7 +44,7 @@ export function SiteHeader() {
             priority
             className="size-7 rounded-md"
           />
-          <span className="hidden text-sm font-semibold tracking-tight sm:inline">Transcript Editor</span>
+          <span className="hidden text-sm font-semibold tracking-tight sm:inline">Transcript Desk</span>
         </Link>
 
         <nav className="flex items-center gap-1" aria-label="Primary navigation">
@@ -93,7 +93,7 @@ export function SiteHeader() {
                 nativeButton={false}
                 render={
                   <a
-                    href="https://github.com/srothgan/transcript-editor"
+                    href="https://github.com/srothgan/transcriptdesk"
                     target="_blank"
                     rel="noreferrer"
                   />
