@@ -1,26 +1,18 @@
 import "client-only";
 
+import {
+  isSpeakerShortcut,
+  SPEAKER_SHORTCUT_OPTIONS,
+  type SpeakerShortcut,
+} from "@/lib/shortcuts";
+
 const STORAGE_KEY = "transcript-desk:speakers:v1";
-
-export type SpeakerShortcut = `Mod+Alt+${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
-
-export const SPEAKER_SHORTCUT_OPTIONS = Array.from({ length: 9 }, (_, index) => {
-  const number = index + 1;
-  return {
-    number,
-    value: `Mod+Alt+${number}` as SpeakerShortcut,
-  };
-});
 
 export type SpeakerDefinition = {
   id: string;
   name: string;
   shortcut: SpeakerShortcut | null;
 };
-
-export function isSpeakerShortcut(value: unknown): value is SpeakerShortcut {
-  return SPEAKER_SHORTCUT_OPTIONS.some((option) => option.value === value);
-}
 
 function isSpeakerDefinition(value: unknown): value is SpeakerDefinition {
   if (!value || typeof value !== "object") {
@@ -33,11 +25,6 @@ function isSpeakerDefinition(value: unknown): value is SpeakerDefinition {
     typeof speaker.name === "string" &&
     (speaker.shortcut === null || isSpeakerShortcut(speaker.shortcut))
   );
-}
-
-export function getSpeakerShortcutLabel(shortcut: string | null, modifierKey: string, alternateKey: string) {
-  const option = SPEAKER_SHORTCUT_OPTIONS.find((candidate) => candidate.value === shortcut);
-  return option ? `${modifierKey} ${alternateKey} ${option.number}` : null;
 }
 
 export function loadSpeakerSettings() {

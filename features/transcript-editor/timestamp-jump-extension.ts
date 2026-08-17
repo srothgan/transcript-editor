@@ -8,6 +8,7 @@ import {
 
 import { parseTimestamp } from "@/lib/time-utils";
 import { getModifierKeyLabel } from "@/lib/platform";
+import { formatShortcutLabel, SHORTCUTS } from "@/lib/shortcuts";
 
 const TIMESTAMP_PATTERN = /\[(\d{1,2}:[0-5]\d:[0-5]\d)\]/g;
 
@@ -69,7 +70,10 @@ function createJumpTooltip(
       button.textContent = `Jump to ${match.label}`;
       button.setAttribute("aria-label", `Jump audio to ${match.label}`);
       shortcut.className = "cm-timestamp-jump-shortcut";
-      shortcut.textContent = `${getModifierKeyLabel()} click`;
+      shortcut.textContent = formatShortcutLabel(
+        SHORTCUTS.jumpToTimestamp,
+        getModifierKeyLabel(),
+      );
       button.append(shortcut);
       button.addEventListener("mousedown", (event) => event.preventDefault());
       button.addEventListener("click", () => onJumpToTime(match.seconds));

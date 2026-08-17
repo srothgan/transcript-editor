@@ -2,14 +2,18 @@
 
 import { Kbd } from "@/components/ui/kbd";
 import { useModifierKeyLabel } from "@/lib/platform";
+import { cn } from "@/lib/utils";
+import { getPlatformShortcutKeys, type ShortcutDisplay } from "@/lib/shortcuts";
 
-export function ModifierKey() {
-  return useModifierKeyLabel();
-}
-
-export function ShortcutKeys({ keys, macKeys }: { keys: readonly string[]; macKeys?: readonly string[] }) {
+export function ShortcutKeys({ className, shortcut }: { className?: string; shortcut: ShortcutDisplay }) {
   const modifierKey = useModifierKeyLabel();
-  const visibleKeys = modifierKey === "⌘" && macKeys ? macKeys : keys;
+  const visibleKeys = getPlatformShortcutKeys(shortcut, modifierKey);
 
-  return visibleKeys.map((key) => <Kbd key={key}>{key === "Mod" ? modifierKey : key}</Kbd>);
+  return (
+    <span className={cn("inline-flex items-center gap-1", className)}>
+      {visibleKeys.map((key) => (
+        <Kbd key={key}>{key}</Kbd>
+      ))}
+    </span>
+  );
 }
