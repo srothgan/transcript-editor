@@ -49,6 +49,11 @@ export const SHORTCUTS = {
     group: "playback",
     hotkey: "Mod+Enter",
   },
+  chooseSpeaker: {
+    description: "Choose speaker",
+    group: "editor",
+    hotkey: "Mod+Shift+Enter",
+  },
   seekBackFive: {
     description: "Back five seconds",
     group: "playback",
@@ -95,12 +100,12 @@ export const SHORTCUTS = {
 
 export type ShortcutId = keyof typeof SHORTCUTS;
 
-export type SpeakerShortcut = `Mod+Alt+${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
+export type SpeakerShortcut = `${1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9}`;
 
 export const SPEAKER_SHORTCUT_OPTIONS = Array.from({ length: 9 }, (_, index) => {
   const number = index + 1;
   return {
-    hotkey: `Mod+Alt+${number}` as SpeakerShortcut,
+    hotkey: `${number}` as SpeakerShortcut,
     number,
   } satisfies ShortcutDisplay & { hotkey: SpeakerShortcut; number: number };
 });

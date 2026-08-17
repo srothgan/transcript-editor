@@ -92,6 +92,7 @@ export function TranscriptWorkspace() {
   const [revisions, setRevisions] = useState<TranscriptRevision[]>([]);
   const [savedContent, setSavedContent] = useState("");
   const [savedFileName, setSavedFileName] = useState<string | null>(null);
+  const [speakerMenuOpen, setSpeakerMenuOpen] = useState(false);
   const [speakers, setSpeakers] = useState<SpeakerDefinition[]>([]);
   const hasTranscript = fileName !== null;
   const isDirty = hasTranscript && (content !== savedContent || fileName !== savedFileName);
@@ -138,6 +139,7 @@ export function TranscriptWorkspace() {
     setSavedContent("");
     setFileName(null);
     setSavedFileName(null);
+    setSpeakerMenuOpen(false);
     setEditorHistoryState({ canRedo: false, canUndo: false });
   };
 
@@ -309,6 +311,11 @@ export function TranscriptWorkspace() {
         hotkey: SHORTCUTS.togglePlayback.hotkey,
         callback: () => audioPlayerRef.current?.togglePlayback(),
       },
+      {
+        hotkey: SHORTCUTS.chooseSpeaker.hotkey,
+        callback: () => setSpeakerMenuOpen(true),
+        options: { enabled: hasTranscript },
+      },
       { hotkey: SHORTCUTS.insertTimestamp.hotkey, callback: insertTimestamp },
       {
         hotkey: SHORTCUTS.seekBackFive.hotkey,
@@ -319,11 +326,6 @@ export function TranscriptWorkspace() {
         callback: () => audioPlayerRef.current?.seekBy(5),
       },
       { hotkey: SHORTCUTS.openDocumentation.hotkey, callback: () => router.push("/docs") },
-      ...speakers.flatMap((speaker) =>
-        speaker.shortcut
-          ? [{ hotkey: speaker.shortcut, callback: () => insertSpeaker(speaker) }]
-          : [],
-      ),
     ],
     {
       ignoreInputs: false,
@@ -449,9 +451,11 @@ export function TranscriptWorkspace() {
               />
               <SpeakerMenu
                 disabled={!hasTranscript}
+                open={speakerMenuOpen}
                 speakers={speakers}
                 onChange={updateSpeakers}
                 onInsert={insertSpeaker}
+                onOpenChange={setSpeakerMenuOpen}
               />
               <Tooltip>
                 <TooltipTrigger

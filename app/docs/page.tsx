@@ -62,7 +62,7 @@ export default function DocsPage() {
             <li>Hover a timestamp or place the cursor inside it to reveal a jump action. <ShortcutKeys shortcut={SHORTCUTS.jumpToTimestamp} /> jumps immediately.</li>
             <li>Find and replace opens from the transcript toolbar or its keyboard shortcut. Undo and redo work on individual editor changes.</li>
             <li>Saving keeps the previous 20 local versions under Saved history.</li>
-            <li>Speaker text is inserted exactly as configured, with an optional shortcut set from the Speakers control in the transcript toolbar.</li>
+            <li>Speaker text is inserted exactly as configured. Open the speaker picker with <ShortcutKeys shortcut={SHORTCUTS.chooseSpeaker} />, then press the configured number.</li>
             <li>Playback resumes two seconds before the paused position. The transport controls provide separate 1- and 5-second jumps in both directions.</li>
           </ul>
         </section>
