@@ -31,6 +31,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ShortcutTooltipContent } from "@/components/shortcut-tooltip-content";
 import { Separator } from "@/components/ui/separator";
 import {
   Tooltip,
@@ -59,7 +60,7 @@ import {
   normalizeTextFileName,
 } from "@/lib/file-utils";
 import { formatTimestamp } from "@/lib/time-utils";
-import { useModifierKeyLabel } from "@/lib/platform";
+import { SHORTCUTS } from "@/lib/shortcuts";
 import {
   getTranscriptDraft,
   getTranscriptHistory,
@@ -75,7 +76,6 @@ type PendingAction =
   | { type: "open"; file: File };
 
 export function TranscriptWorkspace() {
-  const modifierKey = useModifierKeyLabel();
   const router = useRouter();
   const audioPlayerRef = useRef<AudioPlayerHandle>(null);
   const editorRef = useRef<TranscriptEditorHandle>(null);
@@ -298,27 +298,27 @@ export function TranscriptWorkspace() {
 
   useHotkeys(
     [
-      { hotkey: "Mod+S", callback: () => void saveTranscript() },
-      { hotkey: "Mod+Shift+S", callback: exportTranscript },
-      { hotkey: "Mod+O", callback: openTranscriptPicker },
+      { hotkey: SHORTCUTS.saveTranscript.hotkey, callback: () => void saveTranscript() },
+      { hotkey: SHORTCUTS.exportTranscript.hotkey, callback: exportTranscript },
+      { hotkey: SHORTCUTS.openTranscript.hotkey, callback: openTranscriptPicker },
       {
-        hotkey: "Mod+Shift+O",
+        hotkey: SHORTCUTS.openAudio.hotkey,
         callback: () => audioPlayerRef.current?.openFilePicker(),
       },
       {
-        hotkey: "Mod+Enter",
+        hotkey: SHORTCUTS.togglePlayback.hotkey,
         callback: () => audioPlayerRef.current?.togglePlayback(),
       },
-      { hotkey: "Mod+J", callback: insertTimestamp },
+      { hotkey: SHORTCUTS.insertTimestamp.hotkey, callback: insertTimestamp },
       {
-        hotkey: "Mod+Shift+ArrowLeft",
+        hotkey: SHORTCUTS.seekBackFive.hotkey,
         callback: () => audioPlayerRef.current?.seekBy(-5),
       },
       {
-        hotkey: "Mod+Shift+ArrowRight",
+        hotkey: SHORTCUTS.seekForwardFive.hotkey,
         callback: () => audioPlayerRef.current?.seekBy(5),
       },
-      { hotkey: "Mod+/", callback: () => router.push("/docs") },
+      { hotkey: SHORTCUTS.openDocumentation.hotkey, callback: () => router.push("/docs") },
       ...speakers.flatMap((speaker) =>
         speaker.shortcut
           ? [{ hotkey: speaker.shortcut, callback: () => insertSpeaker(speaker) }]
@@ -389,9 +389,9 @@ export function TranscriptWorkspace() {
                   render={<Button variant="ghost" size="icon-sm" onClick={openTranscriptPicker} />}
                 >
                   <FolderOpen />
-                  <span className="sr-only">Open transcript</span>
+                  <span className="sr-only">{SHORTCUTS.openTranscript.description}</span>
                 </TooltipTrigger>
-                <TooltipContent>Open transcript</TooltipContent>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.openTranscript} />
               </Tooltip>
               <Separator orientation="vertical" className="mx-0.5 h-5 self-center" />
               <Tooltip>
@@ -406,9 +406,9 @@ export function TranscriptWorkspace() {
                   }
                 >
                   <Search />
-                  <span className="sr-only">Find and replace</span>
+                  <span className="sr-only">{SHORTCUTS.findAndReplace.description}</span>
                 </TooltipTrigger>
-                <TooltipContent>Find and replace ({modifierKey} F)</TooltipContent>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.findAndReplace} />
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -422,9 +422,9 @@ export function TranscriptWorkspace() {
                   }
                 >
                   <Undo2 />
-                  <span className="sr-only">Undo edit</span>
+                  <span className="sr-only">{SHORTCUTS.undoEdit.description}</span>
                 </TooltipTrigger>
-                <TooltipContent>Undo edit ({modifierKey} Z)</TooltipContent>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.undoEdit} />
               </Tooltip>
               <Tooltip>
                 <TooltipTrigger
@@ -438,9 +438,9 @@ export function TranscriptWorkspace() {
                   }
                 >
                   <Redo2 />
-                  <span className="sr-only">Redo edit</span>
+                  <span className="sr-only">{SHORTCUTS.redoEdit.description}</span>
                 </TooltipTrigger>
-                <TooltipContent>Redo edit ({modifierKey === "⌘" ? `${modifierKey} Shift Z` : `${modifierKey} Y`})</TooltipContent>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.redoEdit} />
               </Tooltip>
               <TranscriptHistoryDialog
                 disabled={!hasTranscript}
@@ -465,9 +465,9 @@ export function TranscriptWorkspace() {
                   }
                 >
                   <Timer />
-                  <span className="sr-only">Insert timestamp</span>
+                  <span className="sr-only">{SHORTCUTS.insertTimestamp.description}</span>
                 </TooltipTrigger>
-                <TooltipContent>Insert current timestamp</TooltipContent>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.insertTimestamp} />
               </Tooltip>
               {hasTranscript ? (
                 <Tooltip>
@@ -494,14 +494,19 @@ export function TranscriptWorkspace() {
                   }
                 >
                   <Save />
-                  <span className="sr-only">Save transcript locally</span>
+                  <span className="sr-only">{SHORTCUTS.saveTranscript.description}</span>
                 </TooltipTrigger>
-                <TooltipContent>Save locally</TooltipContent>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.saveTranscript} />
               </Tooltip>
-              <Button size="sm" disabled={!hasTranscript} onClick={exportTranscript}>
-                <Download data-icon="inline-start" />
-                <span className="hidden sm:inline">Export</span>
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={<Button size="sm" disabled={!hasTranscript} aria-label={SHORTCUTS.exportTranscript.description} onClick={exportTranscript} />}
+                >
+                  <Download data-icon="inline-start" />
+                  <span className="hidden sm:inline">Export</span>
+                </TooltipTrigger>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.exportTranscript} />
+              </Tooltip>
             </div>
           </div>
 

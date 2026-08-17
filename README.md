@@ -26,8 +26,8 @@ Geist is loaded through `next/font/google`. Next.js downloads it during the buil
 
 1. Open an audio recording in the left panel.
 2. Create an empty transcript, restore a browser-local draft, or open an existing `.txt` file on the right.
-3. Use `Ctrl/⌘+S` to save the current transcript locally in the browser.
-4. Use `Ctrl/⌘+Shift+S` or the Export button to download a text file.
+3. Save the current transcript locally using the toolbar or the platform-specific shortcut listed in Docs.
+4. Use the Export button to download a text file.
 
 The Docs page lists every keyboard shortcut, and the About page explains the academic work that motivated the project.
 

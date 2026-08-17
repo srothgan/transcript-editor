@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Settings2, Trash2, UserRoundPlus, UsersRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
+import { ShortcutKeys } from "@/components/shortcut-keys";
 import {
   Dialog,
   DialogContent,
@@ -13,7 +14,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Kbd } from "@/components/ui/kbd";
 import {
   Popover,
   PopoverContent,
@@ -29,11 +29,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  getSpeakerShortcutLabel,
-  isSpeakerShortcut,
-  SPEAKER_SHORTCUT_OPTIONS,
   type SpeakerDefinition,
 } from "./speaker-settings-store";
+import {
+  formatShortcutLabel,
+  getSpeakerShortcut,
+  isSpeakerShortcut,
+  SPEAKER_SHORTCUT_OPTIONS,
+} from "@/lib/shortcuts";
 import { useModifierKeyLabel } from "@/lib/platform";
 
 type SpeakerMenuProps = {
@@ -49,7 +52,6 @@ function normalizeSpeakerName(name: string) {
 
 export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerMenuProps) {
   const modifierKey = useModifierKeyLabel();
-  const alternateKey = modifierKey === "⌘" ? "Option" : "Alt";
   const [draftSpeakers, setDraftSpeakers] = useState<SpeakerDefinition[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -58,7 +60,7 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
   const openSettings = () => {
     const initialSpeakers = speakers.length
       ? speakers.map((speaker) => ({ ...speaker }))
-      : [{ id: crypto.randomUUID(), name: "", shortcut: SPEAKER_SHORTCUT_OPTIONS[0]?.value ?? null }];
+      : [{ id: crypto.randomUUID(), name: "", shortcut: SPEAKER_SHORTCUT_OPTIONS[0]?.hotkey ?? null }];
     setDraftSpeakers(initialSpeakers);
     setError(null);
     setPopoverOpen(false);
@@ -68,7 +70,7 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
   const addSpeaker = () => {
     const usedShortcuts = new Set(draftSpeakers.map((speaker) => speaker.shortcut));
     const shortcut =
-      SPEAKER_SHORTCUT_OPTIONS.find((option) => !usedShortcuts.has(option.value))?.value ?? null;
+      SPEAKER_SHORTCUT_OPTIONS.find((option) => !usedShortcuts.has(option.hotkey))?.hotkey ?? null;
     setDraftSpeakers((current) => [
       ...current,
       { id: crypto.randomUUID(), name: "", shortcut },
@@ -135,7 +137,7 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
           {speakers.length ? (
             <div className="grid gap-1">
               {speakers.map((speaker) => {
-                const shortcutLabel = getSpeakerShortcutLabel(speaker.shortcut, modifierKey, alternateKey);
+                const shortcut = getSpeakerShortcut(speaker.shortcut);
                 return (
                   <Button
                     key={speaker.id}
@@ -147,7 +149,7 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
                     }}
                   >
                     <span className="truncate">{speaker.name}</span>
-                    {shortcutLabel ? <Kbd>{shortcutLabel}</Kbd> : null}
+                    {shortcut ? <ShortcutKeys shortcut={shortcut} /> : null}
                   </Button>
                 );
               })}
@@ -195,11 +197,11 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
                     {SPEAKER_SHORTCUT_OPTIONS.map((option) => {
                       const assignedElsewhere = draftSpeakers.some(
                         (candidate) =>
-                          candidate.id !== speaker.id && candidate.shortcut === option.value,
+                          candidate.id !== speaker.id && candidate.shortcut === option.hotkey,
                       );
                       return (
-                        <SelectItem key={option.value} value={option.value} disabled={assignedElsewhere}>
-                          {modifierKey} {alternateKey} {option.number}
+                        <SelectItem key={option.hotkey} value={option.hotkey} disabled={assignedElsewhere}>
+                          {formatShortcutLabel(option, modifierKey)}
                         </SelectItem>
                       );
                     })}

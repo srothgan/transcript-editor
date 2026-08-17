@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 
-import { ModifierKey, ShortcutKeys } from "@/components/shortcut-keys";
+import { ShortcutKeys } from "@/components/shortcut-keys";
+import { SHORTCUT_GROUPS, SHORTCUTS } from "@/lib/shortcuts";
 
 export const metadata: Metadata = {
   title: "Docs",
@@ -10,35 +11,7 @@ export const metadata: Metadata = {
   },
 };
 
-const SHORTCUT_GROUPS = [
-  {
-    title: "Files",
-    shortcuts: [
-      ["Open transcript", ["Mod", "O"]],
-      ["Open audio", ["Mod", "Shift", "O"]],
-      ["Save transcript locally", ["Mod", "S"]],
-      ["Export text file", ["Mod", "Shift", "S"]],
-    ],
-  },
-  {
-    title: "Playback",
-    shortcuts: [
-      ["Play or pause", ["Mod", "Enter"]],
-      ["Back five seconds", ["Mod", "Shift", "←"]],
-      ["Forward five seconds", ["Mod", "Shift", "→"]],
-      ["Insert timestamp", ["Mod", "J"]],
-    ],
-  },
-  {
-    title: "Editor",
-    shortcuts: [
-      ["Find and replace", ["Mod", "F"]],
-      ["Undo", ["Mod", "Z"]],
-      ["Redo", ["Mod", "Y"], ["Mod", "Shift", "Z"]],
-      ["Open documentation", ["Mod", "/"]],
-    ],
-  },
-] as const;
+const DOCUMENTED_SHORTCUTS = Object.entries(SHORTCUTS).filter(([, shortcut]) => shortcut.group !== null);
 
 export default function DocsPage() {
   return (
@@ -64,14 +37,14 @@ export default function DocsPage() {
           </h2>
           <div className="mt-5 grid gap-8 md:grid-cols-3">
             {SHORTCUT_GROUPS.map((group) => (
-              <div key={group.title}>
-                <h3 className="text-sm font-medium">{group.title}</h3>
+              <div key={group.id}>
+                <h3 className="text-sm font-medium">{group.label}</h3>
                 <dl className="mt-3 grid gap-3">
-                  {group.shortcuts.map(([label, keys, macKeys]) => (
-                    <div key={label} className="grid gap-1.5">
-                      <dt className="text-xs text-muted-foreground">{label}</dt>
+                  {DOCUMENTED_SHORTCUTS.filter(([, shortcut]) => shortcut.group === group.id).map(([shortcutId, shortcut]) => (
+                    <div key={shortcutId} className="grid gap-1.5">
+                      <dt className="text-xs text-muted-foreground">{shortcut.description}</dt>
                       <dd className="flex flex-wrap items-center gap-1">
-                        <ShortcutKeys keys={keys} macKeys={macKeys} />
+                        <ShortcutKeys shortcut={shortcut} />
                       </dd>
                     </div>
                   ))}
@@ -86,7 +59,7 @@ export default function DocsPage() {
             Editing workflow
           </h2>
           <ul className="mt-4 grid list-disc gap-2 pl-5 text-sm leading-6 text-muted-foreground">
-            <li>Hover a timestamp or place the cursor inside it to reveal a jump action. <ModifierKey />-clicking the timestamp jumps immediately.</li>
+            <li>Hover a timestamp or place the cursor inside it to reveal a jump action. <ShortcutKeys shortcut={SHORTCUTS.jumpToTimestamp} /> jumps immediately.</li>
             <li>Find and replace opens from the transcript toolbar or its keyboard shortcut. Undo and redo work on individual editor changes.</li>
             <li>Saving keeps the previous 20 local versions under Saved history.</li>
             <li>Speaker text is inserted exactly as configured, with an optional shortcut set from the Speakers control in the transcript toolbar.</li>

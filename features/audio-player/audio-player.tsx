@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { ShortcutTooltipContent } from "@/components/shortcut-tooltip-content";
 import {
   Select,
   SelectContent,
@@ -32,6 +33,7 @@ import {
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 import { formatTimestamp } from "@/lib/time-utils";
+import { SHORTCUTS, type ShortcutDefinition } from "@/lib/shortcuts";
 import { useAudioPlayer } from "./use-audio-player";
 
 const PLAYBACK_RATES = [0.5, 0.75, 1, 1.25, 1.5, 2];
@@ -52,7 +54,7 @@ function formatFileSize(bytes: number) {
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
 
-function SeekButton({ seconds, onSeek }: { seconds: -5 | -1 | 1 | 5; onSeek: () => void }) {
+function SeekButton({ seconds, onSeek, shortcut }: { seconds: -5 | -1 | 1 | 5; onSeek: () => void; shortcut?: ShortcutDefinition }) {
   const direction = seconds < 0 ? "Back" : "Forward";
   const amount = Math.abs(seconds);
   const label = `${direction} ${amount} ${amount === 1 ? "second" : "seconds"}`;
@@ -72,7 +74,7 @@ function SeekButton({ seconds, onSeek }: { seconds: -5 | -1 | 1 | 5; onSeek: () 
         {seconds > 0 ? `+${seconds}` : `−${amount}`}
         <span className="sr-only">{label}</span>
       </TooltipTrigger>
-      <TooltipContent>{label}</TooltipContent>
+      {shortcut ? <ShortcutTooltipContent shortcut={shortcut} /> : <TooltipContent>{label}</TooltipContent>}
     </Tooltip>
   );
 }
@@ -139,10 +141,15 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle>(
               Local
             </Badge>
           </div>
-          <Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()}>
-            <Upload data-icon="inline-start" />
-            Open
-          </Button>
+          <Tooltip>
+            <TooltipTrigger
+              render={<Button variant="outline" size="sm" onClick={() => fileInputRef.current?.click()} />}
+            >
+              <Upload data-icon="inline-start" />
+              Open
+            </TooltipTrigger>
+            <ShortcutTooltipContent shortcut={SHORTCUTS.openAudio} />
+          </Tooltip>
         </div>
 
         {!file ? (
@@ -221,24 +228,31 @@ export const AudioPlayer = forwardRef<AudioPlayerHandle>(
             </div>
 
             <div className="flex items-center justify-center gap-1.5 px-3 pb-4">
-              <SeekButton seconds={-5} onSeek={() => seekBy(-5)} />
+              <SeekButton seconds={-5} onSeek={() => seekBy(-5)} shortcut={SHORTCUTS.seekBackFive} />
               <SeekButton seconds={-1} onSeek={() => seekBy(-1)} />
-              <Button
-                size="icon-lg"
-                className="mx-0.5 size-11 rounded-full shadow-sm"
-                onClick={togglePlayback}
-                aria-label={isPlaying ? "Pause audio" : "Play audio"}
-              >
-                {isLoading ? (
-                  <LoaderCircle className="animate-spin" />
-                ) : isPlaying ? (
-                  <Pause className="fill-current" />
-                ) : (
-                  <Play className="ml-0.5 fill-current" />
-                )}
-              </Button>
+              <Tooltip>
+                <TooltipTrigger
+                  render={
+                    <Button
+                      size="icon-lg"
+                      className="mx-0.5 size-11 rounded-full shadow-sm"
+                      onClick={togglePlayback}
+                      aria-label={isPlaying ? "Pause audio" : "Play audio"}
+                    />
+                  }
+                >
+                  {isLoading ? (
+                    <LoaderCircle className="animate-spin" />
+                  ) : isPlaying ? (
+                    <Pause className="fill-current" />
+                  ) : (
+                    <Play className="ml-0.5 fill-current" />
+                  )}
+                </TooltipTrigger>
+                <ShortcutTooltipContent shortcut={SHORTCUTS.togglePlayback} />
+              </Tooltip>
               <SeekButton seconds={1} onSeek={() => seekBy(1)} />
-              <SeekButton seconds={5} onSeek={() => seekBy(5)} />
+              <SeekButton seconds={5} onSeek={() => seekBy(5)} shortcut={SHORTCUTS.seekForwardFive} />
             </div>
 
             <Separator />
