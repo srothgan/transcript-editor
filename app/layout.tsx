@@ -57,7 +57,7 @@ export const metadata: Metadata = {
         url: "/flaticon.png",
         width: 730,
         height: 730,
-        alt: "Transcript Editor",
+        alt: "Transcript Desk",
       },
     ],
   },

@@ -177,7 +177,7 @@ export function useAudioPlayer() {
       if ("MediaMetadata" in window) {
         navigator.mediaSession.metadata = new MediaMetadata({
           title: file.name,
-          artist: "Transcript Editor",
+          artist: "Transcript Desk",
         });
       }
 
