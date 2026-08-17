@@ -7,6 +7,7 @@ import {
 } from "@/lib/shortcuts";
 
 const STORAGE_KEY = "transcript-desk:speakers:v1";
+const LEGACY_SPEAKER_SHORTCUT = /^Mod\+Alt\+([1-9])$/;
 
 export type SpeakerDefinition = {
   id: string;
@@ -14,17 +15,28 @@ export type SpeakerDefinition = {
   shortcut: SpeakerShortcut | null;
 };
 
-function isSpeakerDefinition(value: unknown): value is SpeakerDefinition {
+function parseSpeakerDefinition(value: unknown): SpeakerDefinition | null {
   if (!value || typeof value !== "object") {
-    return false;
+    return null;
   }
 
-  const speaker = value as Partial<SpeakerDefinition>;
-  return (
-    typeof speaker.id === "string" &&
-    typeof speaker.name === "string" &&
-    (speaker.shortcut === null || isSpeakerShortcut(speaker.shortcut))
-  );
+  const speaker = value as { id?: unknown; name?: unknown; shortcut?: unknown };
+  if (typeof speaker.id !== "string" || typeof speaker.name !== "string") {
+    return null;
+  }
+
+  if (speaker.shortcut === null || isSpeakerShortcut(speaker.shortcut)) {
+    return { id: speaker.id, name: speaker.name, shortcut: speaker.shortcut };
+  }
+
+  const legacyShortcut =
+    typeof speaker.shortcut === "string"
+      ? LEGACY_SPEAKER_SHORTCUT.exec(speaker.shortcut)?.[1]
+      : undefined;
+
+  return legacyShortcut && isSpeakerShortcut(legacyShortcut)
+    ? { id: speaker.id, name: speaker.name, shortcut: legacyShortcut }
+    : null;
 }
 
 export function loadSpeakerSettings() {
@@ -39,7 +51,12 @@ export function loadSpeakerSettings() {
       return [];
     }
 
-    return parsedValue.filter(isSpeakerDefinition).slice(0, SPEAKER_SHORTCUT_OPTIONS.length);
+    return parsedValue
+      .flatMap((value) => {
+        const speaker = parseSpeakerDefinition(value);
+        return speaker ? [speaker] : [];
+      })
+      .slice(0, SPEAKER_SHORTCUT_OPTIONS.length);
   } catch {
     return [];
   }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useHotkeys } from "@tanstack/react-hotkeys";
 import { Settings2, Trash2, UserRoundPlus, UsersRound } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -35,14 +36,17 @@ import {
   formatShortcutLabel,
   getSpeakerShortcut,
   isSpeakerShortcut,
+  SHORTCUTS,
   SPEAKER_SHORTCUT_OPTIONS,
 } from "@/lib/shortcuts";
 import { useModifierKeyLabel } from "@/lib/platform";
 
 type SpeakerMenuProps = {
   disabled: boolean;
+  open: boolean;
   onChange: (speakers: SpeakerDefinition[]) => void;
   onInsert: (speaker: SpeakerDefinition) => void;
+  onOpenChange: (open: boolean) => void;
   speakers: SpeakerDefinition[];
 };
 
@@ -50,12 +54,31 @@ function normalizeSpeakerName(name: string) {
   return name.trim();
 }
 
-export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerMenuProps) {
+export function SpeakerMenu({ disabled, open, onChange, onInsert, onOpenChange, speakers }: SpeakerMenuProps) {
   const modifierKey = useModifierKeyLabel();
   const [draftSpeakers, setDraftSpeakers] = useState<SpeakerDefinition[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [popoverOpen, setPopoverOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+
+  const insertAndClose = (speaker: SpeakerDefinition) => {
+    onOpenChange(false);
+    requestAnimationFrame(() => onInsert(speaker));
+  };
+
+  useHotkeys(
+    speakers.flatMap((speaker) =>
+      speaker.shortcut
+        ? [{ hotkey: speaker.shortcut, callback: () => insertAndClose(speaker) }]
+        : [],
+    ),
+    {
+      enabled: open && !settingsOpen,
+      ignoreInputs: false,
+      preventDefault: true,
+      requireReset: true,
+      stopPropagation: true,
+    },
+  );
 
   const openSettings = () => {
     const initialSpeakers = speakers.length
@@ -63,7 +86,7 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
       : [{ id: crypto.randomUUID(), name: "", shortcut: SPEAKER_SHORTCUT_OPTIONS[0]?.hotkey ?? null }];
     setDraftSpeakers(initialSpeakers);
     setError(null);
-    setPopoverOpen(false);
+    onOpenChange(false);
     setSettingsOpen(true);
   };
 
@@ -116,15 +139,15 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
 
   return (
     <>
-      <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+      <Popover open={open} onOpenChange={onOpenChange}>
         <PopoverTrigger
           render={
             <Button
               variant="ghost"
               size="icon-sm"
               disabled={disabled}
-              aria-label="Insert speaker"
-              title="Speakers"
+              aria-label={SHORTCUTS.chooseSpeaker.description}
+              title={`${SHORTCUTS.chooseSpeaker.description} (${formatShortcutLabel(SHORTCUTS.chooseSpeaker, modifierKey)})`}
             />
           }
         >
@@ -143,10 +166,7 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
                     key={speaker.id}
                     variant="ghost"
                     className="h-8 justify-between px-2 font-normal"
-                    onClick={() => {
-                      onInsert(speaker);
-                      setPopoverOpen(false);
-                    }}
+                    onClick={() => insertAndClose(speaker)}
                   >
                     <span className="truncate">{speaker.name}</span>
                     {shortcut ? <ShortcutKeys shortcut={shortcut} /> : null}
@@ -167,8 +187,8 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
         <DialogContent className="sm:max-w-xl">
           <DialogHeader>
-            <DialogTitle>Speaker text and shortcuts</DialogTitle>
-            <DialogDescription>Configured text and shortcuts stay in this browser.</DialogDescription>
+            <DialogTitle>Speaker text and numbers</DialogTitle>
+            <DialogDescription>Configured text and numbers stay in this browser.</DialogDescription>
           </DialogHeader>
 
           <div className="grid max-h-[min(24rem,60vh)] gap-2 overflow-y-auto pr-1">
@@ -189,7 +209,7 @@ export function SpeakerMenu({ disabled, onChange, onInsert, speakers }: SpeakerM
                     })
                   }
                 >
-                  <SelectTrigger aria-label={`Shortcut for ${speaker.name || "speaker"}`} className="col-span-2 row-start-2 w-full sm:col-span-1 sm:col-start-2 sm:row-start-1">
+                  <SelectTrigger aria-label={`Number for ${speaker.name || "speaker"}`} className="col-span-2 row-start-2 w-full sm:col-span-1 sm:col-start-2 sm:row-start-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
