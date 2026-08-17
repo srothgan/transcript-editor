@@ -11,7 +11,7 @@ export const metadata: Metadata = {
   },
 };
 
-const DOCUMENTED_SHORTCUTS = Object.values(SHORTCUTS).filter((shortcut) => shortcut.group !== null);
+const DOCUMENTED_SHORTCUTS = Object.entries(SHORTCUTS).filter(([, shortcut]) => shortcut.group !== null);
 
 export default function DocsPage() {
   return (
@@ -40,8 +40,8 @@ export default function DocsPage() {
               <div key={group.id}>
                 <h3 className="text-sm font-medium">{group.label}</h3>
                 <dl className="mt-3 grid gap-3">
-                  {DOCUMENTED_SHORTCUTS.filter((shortcut) => shortcut.group === group.id).map((shortcut) => (
-                    <div key={shortcut.description} className="grid gap-1.5">
+                  {DOCUMENTED_SHORTCUTS.filter(([, shortcut]) => shortcut.group === group.id).map(([shortcutId, shortcut]) => (
+                    <div key={shortcutId} className="grid gap-1.5">
                       <dt className="text-xs text-muted-foreground">{shortcut.description}</dt>
                       <dd className="flex flex-wrap items-center gap-1">
                         <ShortcutKeys shortcut={shortcut} />
